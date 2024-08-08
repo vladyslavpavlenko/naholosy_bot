@@ -1,0 +1,10 @@
+*.test
+*.out
+.idea
+.DS_Store
+.env
+./app
+.app
+.task
+.work
+.log
