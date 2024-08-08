@@ -29,14 +29,16 @@ tasks:
     desc: "Run service with env variables populated from .env file"
     deps: [ install:godotenv ]
     cmds:
-      - godotenv -f ../.env task run-with-env
+      - godotenv -f .env task run-with-env
 
   run-with-env:
     desc: "Subtask of run"
     required:
       vars:
+        - TOKEN
+        - LOG_LEVEL
     cmds:
-      - go run ./cmd/server
+      - go run ./cmd/bot
 
   install:
     desc: "Install all tools"
@@ -57,3 +59,10 @@ tasks:
       - go install mvdan.cc/gofumpt@latest
     status:
       - command -v gofumpt
+
+  install:godotenv:
+    desc: "Install godotenv"
+    cmds:
+      - go install github.com/joho/godotenv/cmd/godotenv@latest
+    status:
+      - command godotenv
