@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup
+      - name: Set up env
         uses: ./.github/actions/setup
         with:
           go-version-file: go.mod
@@ -33,7 +33,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup
+      - name: Set up env
         uses: ./.github/actions/setup
         with:
           go-version-file: go.mod
