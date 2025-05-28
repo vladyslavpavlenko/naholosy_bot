@@ -27,7 +27,7 @@ jobs:
       - name: Run linters
         run: task lint
 
-  format:
+  gofumpt:
     name: Format
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -43,10 +43,10 @@ jobs:
           task-version: '3.x'
 
       - name: Run gofumpt
-        run: task format
+        run: task gofumpt
 
   unit-test:
-    name: Run unit tests
+    name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
