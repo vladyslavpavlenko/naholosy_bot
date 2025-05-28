@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up env
+      - name: Set up environment
         uses: ./.github/actions/setup
         with:
           go-version-file: go.mod
@@ -26,14 +26,14 @@ jobs:
         run: task lint
 
   unit-test:
-    name: Unit Test
+    name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up env
+      - name: Set up environment
         uses: ./.github/actions/setup
         with:
           go-version-file: go.mod
@@ -42,3 +42,23 @@ jobs:
 
       - name: Run unit tests
         run: task go:test:unit
+
+  analyze:
+    name: CodeQL Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+
+      - name: Auto build
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
