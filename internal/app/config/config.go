@@ -6,12 +6,9 @@ import (
 	"github.com/caarlos0/env/v11"
 )
 
-const operation = "config parsing"
-
-// Config is the application configuration structure.
 type Config struct {
 	Token    string `env:"TOKEN,required,notEmpty"`
-	LogLevel string `env:"LOG_LEVEL,required,notEmpty"`
+	LogLevel string `env:"LOG_LEVEL,required,notEmpty" envDefault:"debug"`
 }
 
 // Must is a wrapper around return results from the NewFromEnv()
@@ -29,7 +26,7 @@ func Must(cfg *Config, err error) *Config {
 func NewFromEnv() (*Config, error) {
 	var cfg Config
 	if err := env.Parse(&cfg); err != nil {
-		return nil, fmt.Errorf("%s failed: %w", operation, err)
+		return nil, fmt.Errorf("config parsing failed: %w", err)
 	}
 	return &cfg, nil
 }

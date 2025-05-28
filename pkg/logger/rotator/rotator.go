@@ -26,7 +26,7 @@ func New(opts *Options) *Rotator {
 	var r Rotator
 
 	r.Logger = &lumberjack.Logger{
-		Filename: ".app/logs/logs.log",
+		Filename: "logs.log",
 		MaxAge:   28,
 		Compress: true,
 	}

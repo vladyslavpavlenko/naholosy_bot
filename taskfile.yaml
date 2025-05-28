@@ -25,6 +25,12 @@ tasks:
       - echo "Running formatter..."
       - gofumpt -e -l -w .
 
+  go:test:unit:
+    desc: "Run unit tests"
+    cmds:
+      - echo "Running unit tests..."
+      - go test ./... -v -tags='!func_test'
+
   run:
     desc: "Run service with env variables populated from .env file"
     deps: [ install:godotenv ]

@@ -10,8 +10,9 @@ func main() {
 	cfg := config.Must(config.NewFromEnv())
 
 	l := logger.NewWithRotation(cfg.LogLevel, &rotator.Options{
-		MaxSize: 1,
+		Filename: ".app/logs/logs.log",
+		MaxSize:  1,
 	})
 
-	l.Info("Started")
+	l.Info("Bot started")
 }

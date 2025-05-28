@@ -28,7 +28,7 @@ linters:
     - gosec
 
     # Specific checks
-    - exportloopref
+    - copyloopvar
     - unconvert
     - gosimple
     - gochecknoinits

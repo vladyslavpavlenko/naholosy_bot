@@ -1,0 +1,31 @@
+name: "Setup Go + Task"
+description: "Checkout, install Go & Task"
+inputs:
+  go-version-file:
+    description: 'path to your go.mod'
+    required: false
+    default: 'go.mod'
+  check-latest:
+    description: 'check for latest Go patch'
+    required: false
+    default: 'true'
+  task-version:
+    description: 'version of Task CLI'
+    required: false
+    default: '3.x'
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: ${{ inputs.go-version-file }}
+        check-latest:   ${{ inputs.check-latest }}
+
+    - name: Install Task
+      uses: arduino/setup-task@v2
+      with:
+        version: ${{ inputs.task-version }}
