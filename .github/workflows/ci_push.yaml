@@ -1,5 +1,4 @@
 name: CI
-
 on:
   push: { branches: ['*'] }
   workflow_dispatch: {}
@@ -13,7 +12,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: ./.github/actions/setup
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up env
+        uses: ./.github/actions/setup
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          task-version: '3.x'
+
       - name: Run linters
         run: task lint
 
@@ -22,6 +30,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: ./.github/actions/setup
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up env
+        uses: ./.github/actions/setup
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          task-version: '3.x'
+
       - name: Run unit tests
         run: task go:test:unit
