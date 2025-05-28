@@ -18,11 +18,11 @@ tasks:
       - go.mod
       - go.sum
 
-  format:
+  gofumpt:
     desc: "Run gofumpt"
     deps: [ install:gofumpt ]
     cmds:
-      - echo "Running formatter..."
+      - echo "Running gofumpt..."
       - gofumpt -e -l -w .
 
   go:test:unit:
@@ -51,6 +51,7 @@ tasks:
     deps:
       - install:lint
       - install:gofumpt
+      - install:godotenv
 
   install:lint:
     desc: "Install golangci-lint"
