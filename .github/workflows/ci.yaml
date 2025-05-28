@@ -1,18 +1,20 @@
 name: CI
+
 on:
-  push: { branches: ['*'] }
-  workflow_dispatch: {}
+  push:
+    branches: ['*']
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   lint:
-    name: Linter
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up environment
@@ -25,12 +27,30 @@ jobs:
       - name: Run linters
         run: task lint
 
-  unit-test:
-    name: Unit Tests
+  format:
+    name: Format
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - name: Checkout repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up environment
+        uses: ./.github/actions/setup
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          task-version: '3.x'
+
+      - name: Run gofumpt
+        run: task format
+
+  unit-test:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up environment
@@ -44,8 +64,9 @@ jobs:
         run: task go:test:unit
 
   analyze:
-    name: CodeQL Analyze
+    name: CodeQL
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       security-events: write
     steps:
@@ -57,8 +78,8 @@ jobs:
         with:
           languages: go
 
-      - name: Auto build
+      - name: Auto-build project
         uses: github/codeql-action/autobuild@v3
 
-      - name: Perform CodeQL Analysis
+      - name: Run CodeQL queries
         uses: github/codeql-action/analyze@v3

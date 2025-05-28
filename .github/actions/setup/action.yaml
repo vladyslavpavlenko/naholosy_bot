@@ -29,3 +29,7 @@ runs:
       uses: arduino/setup-task@v2
       with:
         version: ${{ inputs.task-version }}
+
+    - name: Install dependencies
+      shell: bash
+      run: task install
