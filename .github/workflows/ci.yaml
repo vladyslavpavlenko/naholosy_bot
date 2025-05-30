@@ -101,7 +101,7 @@ jobs:
             -e FLYWAY_URL=jdbc:postgresql://localhost:5432/test_db \
             -e FLYWAY_USER=postgres \
             -e FLYWAY_PASSWORD=postgres \
-            flyway/flyway:11.8.2 migrate
+            flyway/flyway:latest-alpine migrate
 
   analyze:
     name: CodeQL
