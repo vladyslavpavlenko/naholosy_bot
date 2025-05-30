@@ -18,8 +18,12 @@ var ukrainian = regexp.MustCompile(`^[А-ЩЬЮЯҐЄІЇа-щьюяґєії]+$`
 //
 // Example: "крицевий" will result into "крИцевий", "крицЕвий", and "крицевИй".
 func GetPossibleAccents(word string) ([]string, error) {
-	if err := validate(word); err != nil {
-		return nil, err
+	if word == "" {
+		return nil, errors.New("word is empty")
+	}
+
+	if !ukrainian.MatchString(word) {
+		return nil, fmt.Errorf("word '%s' is not in Ukrainian", word)
 	}
 
 	runes := []rune(strings.ToLower(word))
@@ -34,16 +38,6 @@ func GetPossibleAccents(word string) ([]string, error) {
 		}
 	}
 	return accents, nil
-}
-
-func validate(word string) error {
-	if word == "" {
-		return errors.New("word is empty")
-	}
-	if !ukrainian.MatchString(word) {
-		return fmt.Errorf("word '%s' is not in Ukrainian", word)
-	}
-	return nil
 }
 
 func isVowel(letter rune) bool {

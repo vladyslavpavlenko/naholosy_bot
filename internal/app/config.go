@@ -1,4 +1,4 @@
-package config
+package app
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	Token    string `env:"TOKEN,required,notEmpty"`
-	LogLevel string `env:"LOG_LEVEL,required,notEmpty" envDefault:"debug"`
+	LogLevel string `env:"LOG_LEVEL,required,notEmpty" envDefault:"DEBUG"`
 }
 
 // Must is a wrapper around return results from the NewFromEnv()

@@ -25,26 +25,38 @@ tasks:
       - echo "Running gofumpt..."
       - gofumpt -e -l -w .
 
-  go:test:unit:
+  test:unit:
     desc: "Run unit tests"
     cmds:
       - echo "Running unit tests..."
       - go test ./... -v -tags='!func_test'
 
   run:
-    desc: "Run service with env variables populated from .env file"
+    desc: "Run service"
     deps: [ install:godotenv ]
-    cmds:
-      - godotenv -f .env task run-with-env
-
-  run-with-env:
-    desc: "Subtask of run"
     required:
       vars:
         - TOKEN
         - LOG_LEVEL
+        - POSTGRES_USER
+        - POSTGRES_PASSWORD
+        - POSTGRES_DB
     cmds:
-      - go run ./cmd/bot
+      - godotenv -f .env go run ./cmd/bot
+
+  run:test:
+    desc: "Run service with docker"
+    deps: [ install:godotenv ]
+    required:
+      vars:
+        - TOKEN
+        - LOG_LEVEL
+        - POSTGRES_USER
+        - POSTGRES_PASSWORD
+        - POSTGRES_DB
+    cmds:
+      - docker compose up -d
+      - godotenv -f .env go run ./cmd/bot
 
   install:
     desc: "Install all tools"
