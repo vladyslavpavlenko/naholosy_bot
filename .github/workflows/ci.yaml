@@ -64,44 +64,44 @@ jobs:
       - name: Run unit tests
         run: task test:unit
 
-migration-test:
-  name: Flyway Tests
-  runs-on: ubuntu-latest
-  services:
-    postgres:
-      image: postgres:16-alpine
-      env:
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
-        POSTGRES_DB: test_db
-      ports:
-        - 5432:5432
-      options: >-
-        --health-cmd "pg_isready -U postgres -d test_db"
-        --health-interval 5s
-        --health-timeout 5s
-        --health-retries 5
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+  migration-test:
+    name: Flyway Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Wait for Postgres
-      run: |
-        until pg_isready -h localhost -p 5432 -U postgres -d test_db; do
-          sleep 1
-        done
-      env:
-        PGPASSWORD: postgres
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres -d test_db; do
+            sleep 1
+          done
+        env:
+          PGPASSWORD: postgres
 
-    - name: Run Flyway migrate
-      run: |
-        docker run --rm \
-          -v "${{ github.workspace }}/sql":/flyway/sql \
-          --network host \
-          -e FLYWAY_URL=jdbc:postgresql://localhost:5432/test_db \
-          -e FLYWAY_USER=postgres \
-          -e FLYWAY_PASSWORD=postgres \
-          flyway/flyway:11.8.2 migrate
+      - name: Run Flyway migrate
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/sql":/flyway/sql \
+            --network host \
+            -e FLYWAY_URL=jdbc:postgresql://localhost:5432/test_db \
+            -e FLYWAY_USER=postgres \
+            -e FLYWAY_PASSWORD=postgres \
+            flyway/flyway:11.8.2 migrate
 
   analyze:
     name: CodeQL
