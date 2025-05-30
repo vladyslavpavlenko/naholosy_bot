@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
   lint:
@@ -61,14 +62,51 @@ jobs:
           task-version: '3.x'
 
       - name: Run unit tests
-        run: task go:test:unit
+        run: task test:unit
+
+  migration-test:
+    name: Flyway Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres -d test_db; do
+            sleep 1
+          done
+        env:
+          PGPASSWORD: postgres
+
+      - name: Run Flyway migrate
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/sql":/flyway/sql \
+            --network host \
+            -e FLYWAY_URL=jdbc:postgresql://localhost:5432/test_db \
+            -e FLYWAY_USER=postgres \
+            -e FLYWAY_PASSWORD=postgres \
+            flyway/flyway:latest-alpine migrate
 
   analyze:
     name: CodeQL
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    permissions:
-      security-events: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
