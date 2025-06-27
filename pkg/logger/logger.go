@@ -77,7 +77,6 @@ func (l *Logger) Fatal(msg string, fields ...Field) {
 	l.z.Fatal(msg, l.toZapFields(fields)...)
 }
 
-// toZapFields converts our []Field into []zap.Field.
 func (l *Logger) toZapFields(fields []Field) []zap.Field {
 	if len(fields) == 0 {
 		return nil

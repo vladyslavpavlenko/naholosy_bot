@@ -41,6 +41,7 @@ tasks:
         - POSTGRES_USER
         - POSTGRES_PASSWORD
         - POSTGRES_DB
+        - ADMIN_IDS
     cmds:
       - godotenv -f .env go run ./cmd/bot
 
@@ -54,6 +55,7 @@ tasks:
         - POSTGRES_USER
         - POSTGRES_PASSWORD
         - POSTGRES_DB
+        - ADMIN_IDS
     cmds:
       - docker compose up -d
       - godotenv -f .env go run ./cmd/bot

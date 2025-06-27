@@ -1,0 +1,1 @@
+ALTER TABLE naholosy RENAME TO accents;

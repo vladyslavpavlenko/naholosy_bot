@@ -1,3 +1,8 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+  concurrency: 4
+
 linters:
   enable:
     # Code correctness and bug prevention
@@ -36,6 +41,7 @@ linters:
 
     # Code formatting issues
     - lll
+  fast: false
 
 linters-settings:
   govet:
