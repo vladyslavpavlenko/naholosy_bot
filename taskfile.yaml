@@ -43,7 +43,7 @@ tasks:
         - POSTGRES_DB
         - ADMIN_IDS
     cmds:
-      - godotenv -f .env go run ./cmd/bot
+      - godotenv -f .env go run ./main
 
   run:test:
     desc: "Run service with docker"
@@ -58,7 +58,7 @@ tasks:
         - ADMIN_IDS
     cmds:
       - docker compose up -d
-      - godotenv -f .env go run ./cmd/bot
+      - godotenv -f .env go run ./main
 
   install:
     desc: "Install all tools"

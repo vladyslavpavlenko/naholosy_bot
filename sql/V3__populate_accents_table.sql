@@ -1,6 +1,6 @@
-INSERT INTO naholosy (word, note) VALUES
+INSERT INTO accents (word, note) VALUES
     ('агронОмія',     NULL),
-    ('алфАвІт',       NULL),
+    ('алфАвІт',       'подвійний наголос'),
     ('Аркушик',       NULL),
     ('асиметрІя',     NULL),
     ('багаторазОвий', NULL),
@@ -114,7 +114,7 @@ INSERT INTO naholosy (word, note) VALUES
     ('листопАд',      NULL),
     ('літОпис',       NULL),
     ('лЮстро',        NULL),
-    ('мАбУть',        NULL),
+    ('мАбУть',        'подвійний наголос'),
     ('магістЕрський', NULL),
     ('мАркетинг',     NULL),
     ('мерЕжа',        NULL),
