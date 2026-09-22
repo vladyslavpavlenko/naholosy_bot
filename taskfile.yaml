@@ -47,7 +47,7 @@ tasks:
     deps: [ install:godotenv ]
     required:
       vars:
-        - TOKEN
+        - BOT_TOKEN
         - LOG_LEVEL
         - ADMIN_IDS
         - DB_PATH

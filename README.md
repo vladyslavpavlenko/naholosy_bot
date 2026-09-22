@@ -12,13 +12,13 @@ migration, no data loss.
 ## Running it
 
 ```bash
-cp .env.example .env   # fill in TOKEN and ADMIN_IDS
+cp .env.example .env   # fill in BOT_TOKEN and ADMIN_IDS
 task run
 ```
 
 | Variable    | Meaning                                                         |
 |-------------|-----------------------------------------------------------------|
-| `TOKEN`     | Bot token from [@BotFather](https://t.me/BotFather).             |
+| `BOT_TOKEN` | Bot token from [@BotFather](https://t.me/BotFather).             |
 | `LOG_LEVEL` | `DEBUG` for human-readable logs, `PROD` for production levels.   |
 | `ADMIN_IDS` | Comma-separated Telegram user IDs allowed to run admin commands. |
 | `DB_PATH`   | SQLite file. Defaults to `naholosy.db` in the working directory. |
