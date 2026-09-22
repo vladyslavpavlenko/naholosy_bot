@@ -41,7 +41,7 @@ func Run(ctx context.Context, cfg config.Config, l *logger.Logger) error {
 		return err
 	}
 
-	api, err := telego.NewBot(cfg.Token, telego.WithDiscardLogger())
+	api, err := telego.NewBot(cfg.BotToken, telego.WithDiscardLogger())
 	if err != nil {
 		return fmt.Errorf("app: creating bot: %w", err)
 	}

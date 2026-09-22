@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	Token    string  `envconfig:"BOT_TOKEN" required:"true"`
+	BotToken string  `envconfig:"BOT_TOKEN" required:"true"`
 	LogLevel string  `envconfig:"LOG_LEVEL" default:"DEBUG"`
 	AdminIDs []int64 `envconfig:"ADMIN_IDS"`
 	// DBPath is the SQLite file. It is the same file the first version of the
