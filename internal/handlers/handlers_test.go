@@ -752,3 +752,45 @@ func (h *harness) texts() string {
 
 	return b.String()
 }
+
+// TestQuestionsAnnounceTheirOwnTimeout covers the clock itself. Telegram
+// closes an expired poll without saying so, so if this stops working a run
+// simply hangs on the question, which is what it did before the clock existed.
+func TestQuestionsAnnounceTheirOwnTimeout(main *testing.T) {
+	main.Run("AnUnansweredQuestionIsAnnounced", func(t *testing.T) {
+		h := newHarness(t)
+		h.handlers.SetQuestionClock(20*time.Millisecond, 10*time.Millisecond)
+		h.startRun(t)
+
+		asked := h.sent.openQuiz(t)
+
+		select {
+		case timeout := <-h.handlers.Timeouts():
+			require.Equal(t, asked.pollID, timeout.PollID)
+			require.EqualValues(t, 1, timeout.UserID)
+		case <-time.After(2 * time.Second):
+			t.Fatal("the question never reported itself as expired")
+		}
+	})
+
+	main.Run("AnAnsweredQuestionIsNot", func(t *testing.T) {
+		h := newHarness(t)
+		h.handlers.SetQuestionClock(20*time.Millisecond, 10*time.Millisecond)
+		h.startRun(t)
+
+		quiz := h.sent.openQuiz(t)
+		require.NoError(t, h.handlers.Answer(t.Context(), h.pick(t, quiz.correct)))
+
+		// The next question has its own clock, so only the answered one must
+		// stay quiet.
+		for {
+			select {
+			case timeout := <-h.handlers.Timeouts():
+				require.NotEqual(t, quiz.pollID, timeout.PollID,
+					"an answered question should not expire")
+			case <-time.After(300 * time.Millisecond):
+				return
+			}
+		}
+	})
+}

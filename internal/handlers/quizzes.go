@@ -1,10 +1,16 @@
 package handlers
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 // openQuiz is a question put to a user as a poll, kept until it is answered.
 type openQuiz struct {
 	userID int64
+	// timer fires when the question has run out of time. Telegram closes the
+	// poll itself but says nothing about it, so the clock has to be ours.
+	timer *time.Timer
 	// options are the answers in the order they were sent, which is the only
 	// way to make sense of the index a poll answer comes back with.
 	options []string
@@ -34,17 +40,6 @@ func newQuizzes() *quizzes {
 	}
 }
 
-// owner returns the user an open poll belongs to. A poll update carries no
-// user, so this is the only way back from a poll to whose question it was.
-func (q *quizzes) owner(pollID string) (int64, bool) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	quiz, ok := q.open[pollID]
-
-	return quiz.userID, ok
-}
-
 // timedOut counts one question that ran out and returns the run of them.
 func (q *quizzes) timedOut(userID int64) int {
 	q.mu.Lock()
@@ -65,16 +60,24 @@ func (q *quizzes) answered(userID int64) {
 
 // put records a freshly sent poll, forgetting whatever the user had open
 // before so that the map does not grow with every question.
-func (q *quizzes) put(pollID string, userID int64, options []string) {
+func (q *quizzes) put(pollID string, userID int64, options []string, timer *time.Timer) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
 	if previous, ok := q.current[userID]; ok {
+		q.stop(previous)
 		delete(q.open, previous)
 	}
 
-	q.open[pollID] = openQuiz{userID: userID, options: options}
+	q.open[pollID] = openQuiz{userID: userID, options: options, timer: timer}
 	q.current[userID] = pollID
+}
+
+// stop cancels a question's clock. The caller holds the lock.
+func (q *quizzes) stop(pollID string) {
+	if quiz, ok := q.open[pollID]; ok && quiz.timer != nil {
+		quiz.timer.Stop()
+	}
 }
 
 // take returns and clears the poll, so that a second answer to it finds
@@ -88,6 +91,7 @@ func (q *quizzes) take(pollID string) (openQuiz, bool) {
 		return openQuiz{}, false
 	}
 
+	q.stop(pollID)
 	delete(q.open, pollID)
 	delete(q.current, quiz.userID)
 
@@ -100,6 +104,7 @@ func (q *quizzes) forget(userID int64) {
 	defer q.mu.Unlock()
 
 	if pollID, ok := q.current[userID]; ok {
+		q.stop(pollID)
 		delete(q.open, pollID)
 		delete(q.current, userID)
 	}

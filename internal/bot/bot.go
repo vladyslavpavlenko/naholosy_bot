@@ -83,7 +83,7 @@ func New(
 func (b *Bot) Run(ctx context.Context, api *telego.Bot) error {
 	updates, err := api.UpdatesViaLongPolling(ctx, &telego.GetUpdatesParams{
 		Timeout:        pollTimeout,
-		AllowedUpdates: []string{"message", "poll_answer", "poll"},
+		AllowedUpdates: []string{"message", "poll_answer"},
 	})
 	if err != nil {
 		return fmt.Errorf("bot: subscribing to updates: %w", err)
@@ -96,8 +96,9 @@ func (b *Bot) Run(ctx context.Context, api *telego.Bot) error {
 
 	handler.Use(b.recover(), th.Timeout(handlerTimeout))
 	handler.Handle(b.dispatchPollAnswer, th.AnyPollAnswer())
-	handler.Handle(b.dispatchPollClosed, th.AnyPoll())
 	handler.Handle(b.dispatch, th.AnyMessageWithText())
+
+	go b.watchTimeouts(ctx, b.handlers.Timeouts())
 
 	stopped := make(chan struct{})
 	go func() {
@@ -217,55 +218,50 @@ func (b *Bot) dispatchPollAnswer(ctx *th.Context, update telego.Update) error {
 	return nil
 }
 
-// dispatchPollClosed handles a question whose time ran out.
-//
-// A poll update carries no user, only the poll, so whose question it was comes
-// from the bot's own record of the open ones. A poll that is not there was
-// answered in time, or belongs to a run already over.
-func (b *Bot) dispatchPollClosed(ctx *th.Context, update telego.Update) error {
-	poll := update.Poll
-	if !poll.IsClosed {
-		return nil
+// watchTimeouts dispatches questions that ran out of time. They arrive from
+// the handlers' own clock rather than from Telegram, which closes an expired
+// poll silently, but they are run exactly like an update: same lock, same
+// route table, same metrics.
+func (b *Bot) watchTimeouts(ctx context.Context, timeouts <-chan handlers.Timeout) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case timeout := <-timeouts:
+			b.timedOut(ctx, timeout)
+		}
 	}
+}
 
-	userID, ok := b.handlers.PollOwner(poll.ID)
-	if !ok {
-		return nil
-	}
-
-	b.metrics.UpdatesTotal.Add(1)
-
-	release := b.locks.Lock(userID)
+func (b *Bot) timedOut(ctx context.Context, timeout handlers.Timeout) {
+	release := b.locks.Lock(timeout.UserID)
 	defer release()
 
-	log := b.log.With(
-		logger.Param("user_id", userID),
-		logger.Param("update_id", ctx.UpdateID()),
-	)
+	log := b.log.With(logger.Param("user_id", timeout.UserID))
 
-	u, err := b.users.Ensure(ctx, userID)
+	u, err := b.users.Ensure(ctx, timeout.UserID)
 	if err != nil {
 		b.metrics.UpdatesFailed.Add(1)
 		log.Error("loading user failed", logger.Error(err))
 
-		return nil
+		return
 	}
 
 	if u.Stage != user.StageGame {
-		return nil
+		return
 	}
 
-	b.run(ctx, log, RouteTimeout, handlers.Request{
-		ChatID: userID,
-		User:   u,
-		Poll:   &handlers.PollAnswer{PollID: poll.ID},
-	})
+	b.metrics.UpdatesTotal.Add(1)
 
-	return nil
+	b.run(ctx, log, RouteTimeout, handlers.Request{
+		ChatID: timeout.UserID,
+		User:   u,
+		Poll:   &handlers.PollAnswer{PollID: timeout.PollID},
+	})
 }
 
 // run executes a handler, timing it and reporting a failure to the user.
-func (b *Bot) run(ctx *th.Context, log *logger.Logger, route string, req handlers.Request) {
+func (b *Bot) run(ctx context.Context, log *logger.Logger, route string, req handlers.Request) {
 	handle, ok := b.routes[route]
 	if !ok {
 		b.metrics.UpdatesFailed.Add(1)

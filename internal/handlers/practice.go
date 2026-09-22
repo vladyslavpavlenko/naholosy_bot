@@ -20,6 +20,9 @@ const (
 	// questionTimeout is how long a question accepts an answer. Telegram
 	// counts it down on the client and closes the poll when it runs out.
 	questionTimeout = 7 * time.Second
+	// timeoutGrace is how long after the poll closes the question is written
+	// off, leaving room for an answer sent at the last moment to arrive.
+	timeoutGrace = 2 * time.Second
 	// missesBeforeStopping is how many questions may run out one after another
 	// before the run is called off. One is a slow answer; two in a row means
 	// nobody is there.
@@ -244,15 +247,31 @@ func (h *Handlers) ask(ctx context.Context, req Request) error {
 		Options:     question.Variants,
 		Correct:     correct,
 		Explanation: responses.QuizExplanation(question.Answer, note),
-		OpenPeriod:  questionTimeout,
+		OpenPeriod:  h.clock.timeout,
 	})
 	if err != nil {
 		return err
 	}
 
-	h.quizzes.put(pollID, req.User.ID, question.Variants)
+	h.quizzes.put(pollID, req.User.ID, question.Variants, h.startClock(req.User.ID, pollID))
 
 	return nil
+}
+
+// startClock arranges for the question to be reported as expired.
+//
+// It fires a little after Telegram has closed the poll, so that an answer sent
+// in the last moment is dispatched first and the question is not written off
+// while the reply is still in flight.
+func (h *Handlers) startClock(userID int64, pollID string) *time.Timer {
+	return time.AfterFunc(h.clock.timeout+h.clock.grace, func() {
+		select {
+		case h.timeouts <- Timeout{UserID: userID, PollID: pollID}:
+		default:
+			h.log.Warn("timeout dropped, nothing is reading",
+				logger.Param("user_id", userID))
+		}
+	})
 }
 
 // complete reacts to a run that went the distance, then reports it.
