@@ -64,44 +64,26 @@ jobs:
       - name: Run unit tests
         run: task test:unit
 
-  migration-test:
-    name: Flyway Tests
+      - name: Run unit tests with the race detector
+        run: task test:race
+
+  build:
+    name: Build
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d test_db"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Wait for Postgres
-        run: |
-          until pg_isready -h localhost -p 5432 -U postgres -d test_db; do
-            sleep 1
-          done
-        env:
-          PGPASSWORD: postgres
+      - name: Set up environment
+        uses: ./.github/actions/setup
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          task-version: '3.x'
 
-      - name: Run Flyway migrate
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}/sql":/flyway/sql \
-            --network host \
-            -e FLYWAY_URL=jdbc:postgresql://localhost:5432/test_db \
-            -e FLYWAY_USER=postgres \
-            -e FLYWAY_PASSWORD=postgres \
-            flyway/flyway:latest-alpine migrate
+      - name: Build
+        run: task build
 
   analyze:
     name: CodeQL

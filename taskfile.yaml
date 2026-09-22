@@ -29,35 +29,29 @@ tasks:
     desc: "Run unit tests"
     cmds:
       - echo "Running unit tests..."
-      - go test ./... -v -tags='!func_test'
+      - go test ./... -count=1
+
+  test:race:
+    desc: "Run unit tests under the race detector"
+    cmds:
+      - echo "Running unit tests with -race..."
+      - go test ./... -count=1 -race
+
+  build:
+    desc: "Build the bot"
+    cmds:
+      - CGO_ENABLED=0 go build -o ./bin/naholosy_bot ./main
 
   run:
     desc: "Run service"
     deps: [ install:godotenv ]
     required:
       vars:
-        - TOKEN
+        - BOT_TOKEN
         - LOG_LEVEL
-        - POSTGRES_USER
-        - POSTGRES_PASSWORD
-        - POSTGRES_DB
         - ADMIN_IDS
+        - DB_PATH
     cmds:
-      - godotenv -f .env go run ./main
-
-  run:test:
-    desc: "Run service with docker"
-    deps: [ install:godotenv ]
-    required:
-      vars:
-        - TOKEN
-        - LOG_LEVEL
-        - POSTGRES_USER
-        - POSTGRES_PASSWORD
-        - POSTGRES_DB
-        - ADMIN_IDS
-    cmds:
-      - docker compose up -d
       - godotenv -f .env go run ./main
 
   install:
@@ -70,7 +64,7 @@ tasks:
   install:lint:
     desc: "Install golangci-lint"
     cmds:
-      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
     status:
       - command -v golangci-lint
 
@@ -86,4 +80,4 @@ tasks:
     cmds:
       - go install github.com/joho/godotenv/cmd/godotenv@latest
     status:
-      - command godotenv
+      - command -v godotenv

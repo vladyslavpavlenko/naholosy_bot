@@ -1,71 +1,66 @@
+version: "2"
 run:
-  timeout: 5m
-  modules-download-mode: readonly
   concurrency: 4
-
+  modules-download-mode: readonly
 linters:
   enable:
-    # Code correctness and bug prevention
-    - govet
-    - typecheck
-    - ineffassign
-    - unused
-    - stylecheck
-    - ireturn
-    - gofumpt
-    - misspell
-    - revive
-
-    # Performance optimizations
-    - prealloc
-    - gocritic
-    - noctx
-
-    # Code complexity management
-    - gocyclo
-    - dupl
-    - unparam
-    - nakedret
-    - dogsled
-    - gocognit
-
-    # Security checks
-    - gosec
-
-    # Specific checks
     - copyloopvar
-    - unconvert
-    - gosimple
+    - dogsled
+    - dupl
     - gochecknoinits
-    - testpackage
-
-    # Code formatting issues
+    - gocognit
+    - gocritic
+    - gocyclo
+    - gosec
+    - ireturn
     - lll
-  fast: false
-
-linters-settings:
-  govet:
-    enable:
-      - shadow
-
-  gocyclo:
-    min-complexity: 25
-
-  dupl:
-    threshold: 100
-
-  misspell:
-    locale: US
-
-  gocritic:
-    enabled-tags:
-      - performance
-      - style
-      - experimental
-    disabled-checks:
-      - wrapperFunc
-      - hugeParam
-      - rangeValCopy
-
-  lll:
-    line-length: 140
+    - misspell
+    - nakedret
+    - noctx
+    - prealloc
+    - revive
+    - staticcheck
+    - testpackage
+    - unconvert
+    - unparam
+  settings:
+    dupl:
+      threshold: 100
+    gocritic:
+      disabled-checks:
+        - wrapperFunc
+        - hugeParam
+        - rangeValCopy
+      enabled-tags:
+        - performance
+        - style
+        - experimental
+    gocyclo:
+      min-complexity: 25
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofumpt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

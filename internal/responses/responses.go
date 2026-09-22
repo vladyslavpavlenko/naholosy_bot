@@ -1,41 +1,84 @@
+// Package responses holds the text the bot sends. Everything is parsed as
+// HTML, so anything interpolated from user input must be escaped.
 package responses
 
-const Start = `Привіт, друже!\n\nЯ допоможу тобі вивчити наголоси, які треба знати для того, щоб скласти ЗНО з української мови на всі 200! 😸`
+// Buttons on the reply keyboards. They double as the commands the router
+// matches on, since the bot is driven by reply keyboards rather than by
+// callbacks.
+const (
+	FasterButton     = "😼 Хутчіш!"
+	PracticeButton   = "🎯 Практика"
+	AllWordsButton   = "🗂 Усі слова"
+	DownloadButton   = "📎 Завантажити PDF"
+	YesButton        = "😼 Так!"
+	MenuButton       = "↩️ Меню"
+	BackButton       = "↩️ Назад"
+	FinishGameButton = "🏳️ Завершити тренування"
+)
 
-const SomethingWentWrong = `<b>😿 Ой-йой!</b>\n\nЗдається, щось пішло не так.`
+const Start = `Привіт, друже!
 
-const MainMenu = `<b>🏠 Головне меню</b>\n\n🆒 Напиши мені слово, а я вкажу який у ньому наголос (якщо воно є у затвердженому переліку).\n<b>Ти: </b><i>фольга</i>\n<b>Я: </b><i>фОльга</i>\n\n🔠 Напиши мені букву або кілька букв через пробіл, щоб побачити усі наголоси на цю літеру.\n<b>Ти: </b><i>Є Я</i>\n<b>Я: </b><i>єретИк\nярмаркОвий</i>`
+Я допоможу тобі вивчити наголоси, які треба знати для того, щоб скласти ЗНО з української мови на всі 200! 😸`
 
-const PracticeMenu = `<b>🎯 Практика</b>\n\nОбери кількість слів для самоперевірки.`
+const SomethingWentWrong = `<b>😿 Ой-йой!</b>
 
-const PracticeExplanation1 = `<b>%s? Чудовий вибір!</b>\n\nГаразд, зараз я надсилатиму тобі по одному слову, написаному маленькими літерами, а ти обиратимеш правильний наголос (він позначається великою літерою) на клавіатурі.`
+Здається, щось пішло не так. Спробуй ще раз.`
+
+const MainMenu = `<b>🏠 Головне меню</b>
+
+🆒 Напиши мені слово, а я вкажу який у ньому наголос (якщо воно є у затвердженому переліку).
+<b>Ти: </b><i>фольга</i>
+<b>Я: </b><i>фОльга</i>
+
+🔠 Напиши мені букву або кілька букв через пробіл, щоб побачити усі наголоси на цю літеру.
+<b>Ти: </b><i>Є Я</i>
+<b>Я: </b><i>єретИк
+ярмаркОвий</i>`
+
+const WordsMenu = `<b>🗂 Усі слова</b>
+
+Обери букви на клавіатурі нижче, щоб побачити слова зі списку.`
+
+const PracticeMenu = `<b>🎯 Практика</b>
+
+Обери кількість слів для самоперевірки.`
+
+const PracticeExplanation1 = "<b>%s? Чудовий вибір!</b>\n\n" +
+	"Гаразд, зараз я надсилатиму тобі по одному слову, написаному маленькими літерами, " +
+	"а ти обиратимеш правильний наголос (він позначається великою літерою) на клавіатурі."
 
 const PracticeExplanation2 = `Не квапся і гарно подумай. Я не обмежуватиму тебе у часі.`
 
 const PracticeExplanation3 = `Поїхали?`
 
-const WrongAnswerPattern = `<b>❌ Помилка!</b>\n%s`
+// QuizProgressPattern takes the question number and the run length. It goes in
+// the poll's description, under the question, so that the question itself is
+// nothing but the word.
+const QuizProgressPattern = `%d / %d`
 
-const QuestionPattern = `<i>[%v / %v]</i>\n\n%s\n<i>%s</i>`
+// RunStarted introduces a run and puts up the standing keyboard.
+const RunStarted = `<b>🎯 Розпочинаємо!</b>
 
-const AllWords = `<b>🗂 Усі слова</b> – %s\n\n`
+Обирай наголос під словом.`
 
-const WordsListPattern = `%s <i>%s</i>\n`
+// MissedWords takes the words the run got wrong.
+const MissedWords = `<b>📌 Варто повторити:</b>
+%s`
 
-const GameResults = `<b>🏁 Тренування завершено!</b>\n\nВсього відповідей <b>%v / %v</b>\n\n✅ Правильно – <b>%v</b>\n❌ Неправильно – <b>%v</b>`
+// GameResults takes the number of answers, the run length, and the correct and
+// wrong tallies.
+const GameResults = `<b>🏁 Тренування завершено!</b>
 
-const FinishGameButton = `🏳️ Завершити тренування`
+Всього відповідей <b>%d / %d</b>
 
-const AllWordsButton = `🗂 Усі слова`
+✅ Правильно – <b>%d</b>
+❌ Неправильно – <b>%d</b>`
 
-const DownloadButton = `📎 Завантажити PDF`
+// WordsHeader takes the letters that were asked for.
+const WordsHeader = `<b>🗂 Усі слова</b> – %s`
 
-const YesButton = `😼 Так!`
+const NoWordsForLetters = `У переліку немає слів на ці букви!`
 
-const PracticeButton = `🎯 Практика`
+const WordNotFound = `🤷 Такого слова немає у затвердженому переліку.`
 
-const FasterButton = `😼 Хутчіш!`
-
-const MenuButton = `↩️ Меню`
-
-const BackButton = `↩️ Назад`
+const OutOfWords = `😿 Слова у переліку скінчилися. Завершую тренування.`

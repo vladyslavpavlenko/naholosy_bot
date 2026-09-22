@@ -11,7 +11,15 @@ import (
 
 const vowels = "аеєиіїоуюя"
 
-var ukrainian = regexp.MustCompile(`^[А-ЩЬЮЯҐЄІЇа-щьюяґєії]+$`)
+// Apostrophes lists every character used as a Ukrainian apostrophe in the
+// wild. They are folded onto a plain one by [FoldApostrophes] before any
+// comparison.
+const Apostrophes = "'\u2019\u2018\u02bc\u0060\u00b4"
+
+// ukrainian matches words built from the Ukrainian alphabet. Apostrophes and
+// hyphens are allowed because the approved list contains "тім'янИй" and
+// "де-Юре"; neither counts as a vowel, so neither can carry a stress.
+var ukrainian = regexp.MustCompile(`^[-'\x{2019}\x{2018}\x{02bc}\x{0060}\x{00b4}А-ЩЬЮЯҐЄІЇа-щьюяґєії]+$`)
 
 type AccentMask []int
 
@@ -70,10 +78,10 @@ func GenerateAccentVariants(
 	var dfs func(start int, mask AccentMask)
 	dfs = func(start int, mask AccentMask) {
 		if len(mask) > 0 && len(mask) <= opts.MaxAccents {
-			word := applyAccentMask(word, mask)
-			if _, ok := seen[word]; !ok {
-				seen[word] = struct{}{}
-				result = append(result, word)
+			variant := applyAccentMask(word, mask)
+			if _, ok := seen[variant]; !ok {
+				seen[variant] = struct{}{}
+				result = append(result, variant)
 			}
 		}
 
