@@ -18,9 +18,8 @@ import (
 
 const (
 	// questionTimeout is how long a question accepts an answer. Telegram
-	// counts it down on the client and closes the poll when it runs out. Five
-	// seconds is the shortest open period it allows.
-	questionTimeout = 5 * time.Second
+	// counts it down on the client and closes the poll when it runs out.
+	questionTimeout = 7 * time.Second
 	// timeoutGrace is how long after the poll closes the question is written
 	// off, leaving room for an answer sent at the last moment to arrive.
 	timeoutGrace = 2 * time.Second

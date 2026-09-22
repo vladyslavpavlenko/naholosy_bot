@@ -452,7 +452,7 @@ func TestPracticeFlow(main *testing.T) {
 		h := newHarness(t)
 		h.startRun(t)
 
-		require.Equal(t, 5*time.Second, h.sent.openQuiz(t).openPeriod)
+		require.Equal(t, 7*time.Second, h.sent.openQuiz(t).openPeriod)
 	})
 
 	main.Run("OneQuestionRunningOutCarriesOn", func(t *testing.T) {
