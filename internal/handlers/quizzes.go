@@ -21,10 +21,46 @@ type quizzes struct {
 	mu      sync.Mutex
 	open    map[string]openQuiz
 	current map[int64]string
+	// missed counts the questions that ran out of time one after another. It
+	// is what tells a slow answer from someone who has walked away.
+	missed map[int64]int
 }
 
 func newQuizzes() *quizzes {
-	return &quizzes{open: make(map[string]openQuiz), current: make(map[int64]string)}
+	return &quizzes{
+		open:    make(map[string]openQuiz),
+		current: make(map[int64]string),
+		missed:  make(map[int64]int),
+	}
+}
+
+// owner returns the user an open poll belongs to. A poll update carries no
+// user, so this is the only way back from a poll to whose question it was.
+func (q *quizzes) owner(pollID string) (int64, bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	quiz, ok := q.open[pollID]
+
+	return quiz.userID, ok
+}
+
+// timedOut counts one question that ran out and returns the run of them.
+func (q *quizzes) timedOut(userID int64) int {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	q.missed[userID]++
+
+	return q.missed[userID]
+}
+
+// answered clears the run of missed questions.
+func (q *quizzes) answered(userID int64) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	delete(q.missed, userID)
 }
 
 // put records a freshly sent poll, forgetting whatever the user had open
@@ -67,4 +103,6 @@ func (q *quizzes) forget(userID int64) {
 		delete(q.open, pollID)
 		delete(q.current, userID)
 	}
+
+	delete(q.missed, userID)
 }

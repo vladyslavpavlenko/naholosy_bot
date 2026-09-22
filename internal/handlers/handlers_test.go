@@ -35,6 +35,7 @@ type sent struct {
 // quizSent is one question put to the user as a poll.
 type quizSent struct {
 	pollID      string
+	openPeriod  time.Duration
 	question    string
 	description string
 	options     []string
@@ -60,6 +61,7 @@ func (r *recorder) SendQuiz(_ context.Context, q sender.Quiz) (string, error) {
 	id := fmt.Sprintf("poll-%d", len(r.quizzes)+1)
 	r.quizzes = append(r.quizzes, quizSent{
 		pollID:      id,
+		openPeriod:  q.OpenPeriod,
 		question:    q.Question,
 		description: q.Description,
 		options:     q.Options,
@@ -211,6 +213,16 @@ func (h *harness) answer(t *testing.T, pollID string, index int) handlers.Reques
 		User:   u,
 		Poll:   &handlers.PollAnswer{PollID: pollID, Options: []int{index}},
 	}
+}
+
+// expire builds the request a question running out of time produces.
+func (h *harness) expire(t *testing.T, pollID string) handlers.Request {
+	t.Helper()
+
+	u, err := h.users.Ensure(t.Context(), 1)
+	require.NoError(t, err)
+
+	return handlers.Request{ChatID: 1, User: u, Poll: &handlers.PollAnswer{PollID: pollID}}
 }
 
 // stage reads the user's persisted stage.
@@ -436,6 +448,69 @@ func TestPracticeFlow(main *testing.T) {
 		require.Zero(t, s.Answered, "an ungradeable answer must not be scored")
 	})
 
+	main.Run("QuestionsCarryATimeout", func(t *testing.T) {
+		h := newHarness(t)
+		h.startRun(t)
+
+		require.Equal(t, 7*time.Second, h.sent.openQuiz(t).openPeriod)
+	})
+
+	main.Run("OneQuestionRunningOutCarriesOn", func(t *testing.T) {
+		h := newHarness(t)
+		h.startRun(t)
+		asked := len(h.sent.quizzes)
+
+		require.NoError(t, h.handlers.Timeout(t.Context(), h.expire(t, h.sent.openQuiz(t).pollID)))
+
+		require.Len(t, h.sent.quizzes, asked+1, "the next question should have been asked")
+		require.Equal(t, user.StageGame, h.stage(t))
+	})
+
+	main.Run("TwoInARowStopTheRun", func(t *testing.T) {
+		h := newHarness(t)
+		h.startRun(t)
+
+		require.NoError(t, h.handlers.Timeout(t.Context(), h.expire(t, h.sent.openQuiz(t).pollID)))
+		require.NoError(t, h.handlers.Timeout(t.Context(), h.expire(t, h.sent.openQuiz(t).pollID)))
+
+		texts := h.texts()
+		require.Contains(t, texts, "Зупиняю тренування")
+		require.Contains(t, texts, "🏁", "the tally is still reported")
+		require.Contains(t, texts, responses.PracticeMenu)
+		require.Equal(t, user.StagePracticeMenu, h.stage(t))
+	})
+
+	main.Run("AnsweringResetsTheRunOfMisses", func(t *testing.T) {
+		h := newHarness(t)
+		h.startRun(t)
+
+		require.NoError(t, h.handlers.Timeout(t.Context(), h.expire(t, h.sent.openQuiz(t).pollID)))
+
+		quiz := h.sent.openQuiz(t)
+		require.NoError(t, h.handlers.Answer(t.Context(), h.pick(t, quiz.correct)))
+
+		// The miss before the answer must not count towards stopping.
+		require.NoError(t, h.handlers.Timeout(t.Context(), h.expire(t, h.sent.openQuiz(t).pollID)))
+
+		require.NotContains(t, h.texts(), "Зупиняю тренування")
+		require.Equal(t, user.StageGame, h.stage(t))
+	})
+
+	main.Run("AnAnsweredQuestionRunningOutIsIgnored", func(t *testing.T) {
+		// The poll still closes at the end of its period even once answered.
+		h := newHarness(t)
+		h.startRun(t)
+
+		quiz := h.sent.openQuiz(t)
+		require.NoError(t, h.handlers.Answer(t.Context(), h.pick(t, quiz.correct)))
+		asked := len(h.sent.quizzes)
+
+		require.NoError(t, h.handlers.Timeout(t.Context(), h.expire(t, quiz.pollID)))
+
+		require.Len(t, h.sent.quizzes, asked, "no extra question")
+		require.NotContains(t, h.texts(), "Зупиняю тренування")
+	})
+
 	main.Run("GivingUpReportsWhatWasDone", func(t *testing.T) {
 		h := newHarness(t)
 
@@ -653,4 +728,27 @@ func TestBackgroundWorkSurvivesAPanic(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return m.Snapshot().PanicsRecovered > 0
 	}, 2*time.Second, 10*time.Millisecond, "the panic was not recovered")
+}
+
+// startRun takes a user from the practice menu to the first question.
+func (h *harness) startRun(t *testing.T) {
+	t.Helper()
+
+	require.NoError(t, h.handlers.PracticeMenu(t.Context(), h.request(t, responses.PracticeButton)))
+	require.NoError(t, h.handlers.ChooseSize(t.Context(), h.request(t, "12")))
+	require.NoError(t, h.handlers.StartRun(t.Context(), h.request(t, responses.YesButton)))
+}
+
+// texts joins everything the bot has said so far.
+func (h *harness) texts() string {
+	h.sent.mu.Lock()
+	defer h.sent.mu.Unlock()
+
+	var b strings.Builder
+	for _, m := range h.sent.messages {
+		b.WriteString(m.text)
+		b.WriteString("\n")
+	}
+
+	return b.String()
 }

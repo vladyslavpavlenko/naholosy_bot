@@ -23,6 +23,7 @@ const (
 	RouteChooseSize       = "practice.size"
 	RouteStartRun         = "practice.start"
 	RouteAnswer           = "practice.answer"
+	RouteTimeout          = "practice.timeout"
 	RouteFinishRun        = "practice.finish"
 	RouteStatus           = "admin.status"
 	RouteBroadcast        = "admin.broadcast"

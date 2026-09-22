@@ -122,6 +122,9 @@ type Quiz struct {
 	// Explanation is shown on a wrong answer, or when the lamp is tapped, up
 	// to 200 characters.
 	Explanation string
+	// OpenPeriod is how long the poll accepts answers, 5 to 2628000 seconds.
+	// The client counts down, and Telegram closes the poll when it runs out.
+	OpenPeriod time.Duration
 }
 
 // SendQuiz sends a quiz poll and returns Telegram's ID for it, which is the
@@ -144,6 +147,7 @@ func (s *Sender) SendQuiz(ctx context.Context, q Quiz) (string, error) {
 	params.Description = q.Description
 	params.Explanation = q.Explanation
 	params.ExplanationParseMode = telego.ModeHTML
+	params.OpenPeriod = int(q.OpenPeriod.Seconds())
 
 	var pollID string
 	err := s.attempt(ctx, func() error {

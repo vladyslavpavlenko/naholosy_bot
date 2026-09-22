@@ -82,3 +82,8 @@ const NoWordsForLetters = `У переліку немає слів на ці б�
 const WordNotFound = `🤷 Такого слова немає у затвердженому переліку.`
 
 const OutOfWords = `😿 Слова у переліку скінчилися. Завершую тренування.`
+
+// RunTimedOut ends a run the user walked away from.
+const RunTimedOut = `<b>⏳ Зупиняю тренування</b>
+
+Схоже, тебе немає поруч. Повертайся — почнемо спочатку.`

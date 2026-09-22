@@ -12,7 +12,7 @@ func (b *Bot) Handles(route string) bool {
 func Routes() []string {
 	return []string{
 		RouteStart, RouteMenu, RouteWordsMenu, RouteLetters, RouteLookup, RouteDownload,
-		RoutePracticeMenu, RouteChooseSize, RouteStartRun, RouteAnswer, RouteFinishRun,
+		RoutePracticeMenu, RouteChooseSize, RouteStartRun, RouteAnswer, RouteTimeout, RouteFinishRun,
 		RouteStatus, RouteBroadcast, RouteBroadcastTest, RouteBroadcastConfirm, RouteBroadcastCancel,
 	}
 }

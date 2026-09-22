@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/vladyslavpavlenko/naholosy_bot/internal/keyboard"
 	"github.com/vladyslavpavlenko/naholosy_bot/internal/practice"
@@ -13,6 +14,16 @@ import (
 	"github.com/vladyslavpavlenko/naholosy_bot/internal/sender"
 	"github.com/vladyslavpavlenko/naholosy_bot/internal/user"
 	"github.com/vladyslavpavlenko/naholosy_bot/pkg/logger"
+)
+
+const (
+	// questionTimeout is how long a question accepts an answer. Telegram
+	// counts it down on the client and closes the poll when it runs out.
+	questionTimeout = 7 * time.Second
+	// missesBeforeStopping is how many questions may run out one after another
+	// before the run is called off. One is a slow answer; two in a row means
+	// nobody is there.
+	missesBeforeStopping = 2
 )
 
 // PracticeMenu ends any run in progress and offers the run lengths.
@@ -133,6 +144,8 @@ func (h *Handlers) Answer(ctx context.Context, req Request) error {
 		return nil
 	}
 
+	h.quizzes.answered(req.User.ID)
+
 	result, err := h.practice.Answer(ctx, req.User.ID, quiz.options[picked])
 	switch {
 	case errors.Is(err, practice.ErrStaleAnswer):
@@ -150,6 +163,34 @@ func (h *Handlers) Answer(ctx context.Context, req Request) error {
 	}
 
 	return h.ask(ctx, req)
+}
+
+// Timeout handles a question that ran out of time. One is a slow answer and
+// the run carries on; two in a row means the user has walked away, and the run
+// is called off rather than left hanging.
+func (h *Handlers) Timeout(ctx context.Context, req Request) error {
+	if req.Poll == nil {
+		return nil
+	}
+
+	if _, ok := h.quizzes.take(req.Poll.PollID); !ok {
+		// Answered in time, or belonging to a run already over.
+		return nil
+	}
+
+	if h.quizzes.timedOut(req.User.ID) < missesBeforeStopping {
+		return h.ask(ctx, req)
+	}
+
+	if err := h.sender.Send(ctx, sender.Message{
+		ChatID: req.ChatID,
+		Text:   responses.RunTimedOut,
+		Markup: keyboard.Remove(),
+	}); err != nil {
+		return err
+	}
+
+	return h.FinishRun(ctx, req)
 }
 
 // FinishRun ends a run the user gave up on.
@@ -203,6 +244,7 @@ func (h *Handlers) ask(ctx context.Context, req Request) error {
 		Options:     question.Variants,
 		Correct:     correct,
 		Explanation: responses.QuizExplanation(question.Answer, note),
+		OpenPeriod:  questionTimeout,
 	})
 	if err != nil {
 		return err

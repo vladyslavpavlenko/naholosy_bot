@@ -68,6 +68,7 @@ func New(
 			RouteChooseSize:       h.ChooseSize,
 			RouteStartRun:         h.StartRun,
 			RouteAnswer:           h.Answer,
+			RouteTimeout:          h.Timeout,
 			RouteFinishRun:        h.FinishRun,
 			RouteStatus:           h.Status,
 			RouteBroadcast:        h.BroadcastPrepare,
@@ -82,7 +83,7 @@ func New(
 func (b *Bot) Run(ctx context.Context, api *telego.Bot) error {
 	updates, err := api.UpdatesViaLongPolling(ctx, &telego.GetUpdatesParams{
 		Timeout:        pollTimeout,
-		AllowedUpdates: []string{"message", "poll_answer"},
+		AllowedUpdates: []string{"message", "poll_answer", "poll"},
 	})
 	if err != nil {
 		return fmt.Errorf("bot: subscribing to updates: %w", err)
@@ -95,6 +96,7 @@ func (b *Bot) Run(ctx context.Context, api *telego.Bot) error {
 
 	handler.Use(b.recover(), th.Timeout(handlerTimeout))
 	handler.Handle(b.dispatchPollAnswer, th.AnyPollAnswer())
+	handler.Handle(b.dispatchPollClosed, th.AnyPoll())
 	handler.Handle(b.dispatch, th.AnyMessageWithText())
 
 	stopped := make(chan struct{})
@@ -210,6 +212,53 @@ func (b *Bot) dispatchPollAnswer(ctx *th.Context, update telego.Update) error {
 		ChatID: answer.User.ID,
 		User:   u,
 		Poll:   &handlers.PollAnswer{PollID: answer.PollID, Options: answer.OptionIDs},
+	})
+
+	return nil
+}
+
+// dispatchPollClosed handles a question whose time ran out.
+//
+// A poll update carries no user, only the poll, so whose question it was comes
+// from the bot's own record of the open ones. A poll that is not there was
+// answered in time, or belongs to a run already over.
+func (b *Bot) dispatchPollClosed(ctx *th.Context, update telego.Update) error {
+	poll := update.Poll
+	if !poll.IsClosed {
+		return nil
+	}
+
+	userID, ok := b.handlers.PollOwner(poll.ID)
+	if !ok {
+		return nil
+	}
+
+	b.metrics.UpdatesTotal.Add(1)
+
+	release := b.locks.Lock(userID)
+	defer release()
+
+	log := b.log.With(
+		logger.Param("user_id", userID),
+		logger.Param("update_id", ctx.UpdateID()),
+	)
+
+	u, err := b.users.Ensure(ctx, userID)
+	if err != nil {
+		b.metrics.UpdatesFailed.Add(1)
+		log.Error("loading user failed", logger.Error(err))
+
+		return nil
+	}
+
+	if u.Stage != user.StageGame {
+		return nil
+	}
+
+	b.run(ctx, log, RouteTimeout, handlers.Request{
+		ChatID: userID,
+		User:   u,
+		Poll:   &handlers.PollAnswer{PollID: poll.ID},
 	})
 
 	return nil

@@ -122,6 +122,12 @@ func (h *Handlers) background(work func()) {
 	}()
 }
 
+// PollOwner returns the user whose open question a poll is. A poll update
+// carries no user, so the caller has no other way to find out.
+func (h *Handlers) PollOwner(pollID string) (int64, bool) {
+	return h.quizzes.owner(pollID)
+}
+
 // Fallback tells the user something went wrong, without changing their state.
 func (h *Handlers) Fallback(ctx context.Context, req Request) {
 	if err := h.sender.Send(ctx, sender.Message{
