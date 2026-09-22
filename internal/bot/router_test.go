@@ -127,6 +127,13 @@ func TestParseCommand(main *testing.T) {
 		{name: "WithBotSuffix", text: "/broadcast@naholosy_bot текст", command: "broadcast", args: "текст"},
 		{name: "MixedCase", text: "/Status", command: "status"},
 		{name: "TrimsArgs", text: "/broadcast    текст   ", command: "broadcast", args: "текст"},
+		{
+			// A broadcast spanning several lines is written with a newline
+			// straight after the command.
+			name: "NewlineAfterTheCommand", text: "/broadcast\n<b>Оновлення</b>\n\nДругий рядок",
+			command: "broadcast", args: "<b>Оновлення</b>\n\nДругий рядок",
+		},
+		{name: "NewlineWithBotSuffix", text: "/broadcast@naholosy_bot\nтекст", command: "broadcast", args: "текст"},
 		{name: "NotACommand", text: "фольга"},
 		{name: "Empty", text: ""},
 	}

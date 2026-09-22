@@ -3,6 +3,7 @@ package bot
 import (
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/vladyslavpavlenko/naholosy_bot/internal/practice"
 	"github.com/vladyslavpavlenko/naholosy_bot/internal/responses"
@@ -86,15 +87,25 @@ func Resolve(stage user.Stage, text string, admin bool) string {
 
 // ParseCommand splits "/broadcast@bot some text" into "broadcast" and
 // "some text". A message that is not a command yields an empty name.
+//
+// The split is at the first whitespace rather than the first space, because a
+// broadcast spanning several lines is written with a newline straight after
+// the command and would otherwise not be recognized as one at all.
 func ParseCommand(text string) (command, args string) {
 	if !strings.HasPrefix(text, "/") {
 		return "", ""
 	}
 
-	command, args, _ = strings.Cut(strings.TrimPrefix(text, "/"), " ")
-	command, _, _ = strings.Cut(command, "@")
+	rest := strings.TrimPrefix(text, "/")
 
-	return strings.ToLower(command), strings.TrimSpace(args)
+	end := strings.IndexFunc(rest, unicode.IsSpace)
+	if end < 0 {
+		end = len(rest)
+	}
+
+	command, _, _ = strings.Cut(rest[:end], "@")
+
+	return strings.ToLower(command), strings.TrimSpace(rest[end:])
 }
 
 func isRunLength(text string) bool {
