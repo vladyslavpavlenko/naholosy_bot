@@ -65,14 +65,23 @@ const RunStarted = `<b>🎯 Розпочинаємо!</b>
 const MissedWords = `<b>📌 Варто повторити:</b>
 %s`
 
-// GameResults takes the number of answers, the run length, and the correct and
-// wrong tallies.
-const GameResults = `<b>🏁 Тренування завершено!</b>
+// ResultsPattern takes the heading, then the number of answers, the run
+// length, and the correct and wrong tallies.
+const ResultsPattern = `%s
 
 Всього відповідей <b>%d / %d</b>
 
 ✅ Правильно – <b>%d</b>
 ❌ Неправильно – <b>%d</b>`
+
+// Headings a finished run can carry. A run the user walked away from says so
+// in place of the usual one, rather than in a message of its own.
+const (
+	ResultsFinished = `<b>🏁 Тренування завершено!</b>`
+	ResultsTimedOut = `<b>⏳ Тренування зупинено!</b>
+
+Схоже, тебе немає поруч.`
+)
 
 // WordsHeader takes the letters that were asked for.
 const WordsHeader = `<b>🗂 Усі слова</b> – %s`
@@ -82,8 +91,3 @@ const NoWordsForLetters = `У переліку немає слів на ці б�
 const WordNotFound = `🤷 Такого слова немає у затвердженому переліку.`
 
 const OutOfWords = `😿 Слова у переліку скінчилися. Завершую тренування.`
-
-// RunTimedOut ends a run the user walked away from.
-const RunTimedOut = `<b>⏳ Зупиняю тренування</b>
-
-Схоже, тебе немає поруч. Повертайся — почнемо спочатку.`

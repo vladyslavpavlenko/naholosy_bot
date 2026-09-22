@@ -452,7 +452,7 @@ func TestPracticeFlow(main *testing.T) {
 		h := newHarness(t)
 		h.startRun(t)
 
-		require.Equal(t, 7*time.Second, h.sent.openQuiz(t).openPeriod)
+		require.Equal(t, 5*time.Second, h.sent.openQuiz(t).openPeriod)
 	})
 
 	main.Run("OneQuestionRunningOutCarriesOn", func(t *testing.T) {
@@ -474,8 +474,9 @@ func TestPracticeFlow(main *testing.T) {
 		require.NoError(t, h.handlers.Timeout(t.Context(), h.expire(t, h.sent.openQuiz(t).pollID)))
 
 		texts := h.texts()
-		require.Contains(t, texts, "Зупиняю тренування")
-		require.Contains(t, texts, "🏁", "the tally is still reported")
+		require.Contains(t, texts, "Тренування зупинено")
+		require.Contains(t, texts, "Всього відповідей", "the tally is in that same message")
+		require.NotContains(t, texts, "Тренування завершено", "it did not finish, it was stopped")
 		require.Contains(t, texts, responses.PracticeMenu)
 		require.Equal(t, user.StagePracticeMenu, h.stage(t))
 	})
@@ -492,7 +493,7 @@ func TestPracticeFlow(main *testing.T) {
 		// The miss before the answer must not count towards stopping.
 		require.NoError(t, h.handlers.Timeout(t.Context(), h.expire(t, h.sent.openQuiz(t).pollID)))
 
-		require.NotContains(t, h.texts(), "Зупиняю тренування")
+		require.NotContains(t, h.texts(), "Тренування зупинено")
 		require.Equal(t, user.StageGame, h.stage(t))
 	})
 
@@ -508,7 +509,7 @@ func TestPracticeFlow(main *testing.T) {
 		require.NoError(t, h.handlers.Timeout(t.Context(), h.expire(t, quiz.pollID)))
 
 		require.Len(t, h.sent.quizzes, asked, "no extra question")
-		require.NotContains(t, h.texts(), "Зупиняю тренування")
+		require.NotContains(t, h.texts(), "Тренування зупинено")
 	})
 
 	main.Run("GivingUpReportsWhatWasDone", func(t *testing.T) {

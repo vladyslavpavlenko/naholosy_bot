@@ -43,8 +43,13 @@ func QuizExplanation(word, note string) string {
 // Results renders the summary of a finished run, naming the words it got
 // wrong so the user knows what to go back to.
 func Results(summary practice.Summary) string {
+	heading := ResultsFinished
+	if summary.TimedOut {
+		heading = ResultsTimedOut
+	}
+
 	s := summary.Session
-	text := fmt.Sprintf(GameResults, s.Answered, s.Size, s.Correct, s.Wrong)
+	text := fmt.Sprintf(ResultsPattern, heading, s.Answered, s.Size, s.Correct, s.Wrong)
 
 	if len(summary.Missed) == 0 {
 		return text

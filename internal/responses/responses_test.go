@@ -13,11 +13,11 @@ import (
 // written as raw string literals with a literal backslash-n in them.
 func TestTextsContainRealNewlines(t *testing.T) {
 	for name, text := range map[string]string{
-		"Start":        responses.Start,
-		"MainMenu":     responses.MainMenu,
-		"WordsMenu":    responses.WordsMenu,
-		"PracticeMenu": responses.PracticeMenu,
-		"GameResults":  responses.GameResults,
+		"Start":           responses.Start,
+		"MainMenu":        responses.MainMenu,
+		"WordsMenu":       responses.WordsMenu,
+		"PracticeMenu":    responses.PracticeMenu,
+		"ResultsTimedOut": responses.ResultsTimedOut,
 	} {
 		require.NotContains(t, text, `\n`, "%s must use real newlines", name)
 		require.Contains(t, text, "\n", "%s is meant to span several lines", name)
@@ -105,9 +105,20 @@ func TestResults(main *testing.T) {
 
 	main.Run("Tally", func(t *testing.T) {
 		text := responses.Results(practice.Summary{Session: session})
+		require.Contains(t, text, "Тренування завершено")
 		require.Contains(t, text, "<b>12 / 12</b>")
 		require.Contains(t, text, "<b>9</b>")
 		require.Contains(t, text, "<b>3</b>")
+	})
+
+	main.Run("WalkingAwaySaysSoInTheSameMessage", func(t *testing.T) {
+		// The tally is reported either way; only the heading differs, so that
+		// stopping does not take two messages.
+		text := responses.Results(practice.Summary{Session: session, TimedOut: true})
+		require.Contains(t, text, "Тренування зупинено")
+		require.Contains(t, text, "Схоже, тебе немає поруч")
+		require.Contains(t, text, "<b>12 / 12</b>")
+		require.NotContains(t, text, "Тренування завершено")
 	})
 
 	main.Run("NamesTheMissedWords", func(t *testing.T) {

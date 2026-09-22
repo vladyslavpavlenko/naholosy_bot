@@ -123,7 +123,11 @@ type Summary struct {
 	// Completed reports that the run went the distance rather than being
 	// abandoned partway.
 	Completed bool
-	Grade     Grade
+	// TimedOut reports that the run was called off because the user stopped
+	// answering. It is set by the caller: running out of time is a matter of
+	// the conversation, not of the run itself.
+	TimedOut bool
+	Grade    Grade
 }
 
 // Begin starts a run of the given length, discarding any run in progress.

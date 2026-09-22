@@ -18,8 +18,9 @@ import (
 
 const (
 	// questionTimeout is how long a question accepts an answer. Telegram
-	// counts it down on the client and closes the poll when it runs out.
-	questionTimeout = 7 * time.Second
+	// counts it down on the client and closes the poll when it runs out. Five
+	// seconds is the shortest open period it allows.
+	questionTimeout = 5 * time.Second
 	// timeoutGrace is how long after the poll closes the question is written
 	// off, leaving room for an answer sent at the last moment to arrive.
 	timeoutGrace = 2 * time.Second
@@ -185,19 +186,17 @@ func (h *Handlers) Timeout(ctx context.Context, req Request) error {
 		return h.ask(ctx, req)
 	}
 
-	if err := h.sender.Send(ctx, sender.Message{
-		ChatID: req.ChatID,
-		Text:   responses.RunTimedOut,
-		Markup: keyboard.Remove(),
-	}); err != nil {
-		return err
-	}
-
-	return h.FinishRun(ctx, req)
+	return h.endRun(ctx, req, true)
 }
 
 // FinishRun ends a run the user gave up on.
 func (h *Handlers) FinishRun(ctx context.Context, req Request) error {
+	return h.endRun(ctx, req, false)
+}
+
+// endRun closes a run and reports it. A run the user walked away from says so
+// in the heading of that same report, rather than in a message before it.
+func (h *Handlers) endRun(ctx context.Context, req Request, timedOut bool) error {
 	summary, err := h.practice.Finish(ctx, req.User.ID)
 	if errors.Is(err, practice.ErrNoSession) {
 		return h.PracticeMenu(ctx, req)
@@ -205,6 +204,8 @@ func (h *Handlers) FinishRun(ctx context.Context, req Request) error {
 	if err != nil {
 		return err
 	}
+
+	summary.TimedOut = timedOut
 
 	return h.results(ctx, req, summary)
 }
